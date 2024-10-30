@@ -1,0 +1,44 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+    --background: #17212B; 
+}
+
+body { 
+    background-color: var(--background);
+    font-family: 'Stem', sans-serif;
+}
+
+/* utils/global.css */
+
+
+    @font-face {
+        font-family: 'Stem';
+        src: url('/fonts/stem/Stem-Light.woff2') format('woff2');
+        font-weight: 300;
+        font-style: normal;
+    }
+
+    @font-face {
+        font-family: 'Stem';
+        src: url('/fonts/stem/Stem-SemiLight.woff2') format('woff2');
+        font-weight: 500;
+        font-style: normal;
+    }
+
+    @font-face {
+        font-family: 'Stem';
+        src: url('/fonts/stem/Stem-Medium.woff2') format('woff2');
+        font-weight: 600;
+        font-style: normal;
+    }
+  
+    @font-face {
+        font-family: 'Stem';
+        src: url('/fonts/stem/Stem-Bold.woff2') format('woff2');
+        font-weight: 700;
+        font-style: normal;
+    }
+  
