@@ -3,45 +3,90 @@ import Head from 'next/head';
 import Spinner from '@/components/Spinner';
 import Image from 'next/image';
 import { motion } from "framer-motion";
+import Cookies from 'js-cookie';
+import * as yup from 'yup';
+import { yupResolver } from '@hookform/resolvers/yup';
+import { useForm } from 'react-hook-form';
+import { parseCookies } from 'nookies';
 
-export default function Login() {
+const schema = yup.object().shape({
+    emailOrLogin: yup
+      .string()
+      .required('Введите email или логин')
+      .min(4, 'Минимум 4 символа')
+      .matches(/^[a-zA-Z0-9.@]+$/, 'Только английские буквы'),
+    password: yup
+      .string()
+      .required('Введите пароль')
+      .min(2, 'Пароль должен быть минимум 2 символа'),
+  });
+  
+  const onSubmit = (data) => {
+    // Логика отправки данных
+    console.log(data);
+  };
+
+  export async function getServerSideProps(context) {
+    const cookies = parseCookies(context);
+    const token = cookies.token;
+    
+  
+    // Если токен и user_id присутствуют, перенаправляем на главную страницу
+    if (token) {
+      return {
+        redirect: {
+          destination: '/',
+          permanent: false,
+        },
+      };
+    }
+  
+    return {
+      props: {}, // Данные для страницы логина
+    };
+  }
+
+export default function Login({ context }) {
     const [isLoading, setIsLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
-    const [errorMessage, setErrorMessage] = useState(true)
-    const loginRef = useRef(null);
-    const passwordRef = useRef(null);
+    const [errorMessage, setErrorMessage] = useState(false);
+    const cookies = parseCookies(context);
+    const userId = cookies.user_id;
+    
+    const {
+        register,
+        handleSubmit,
+        formState: { errors },
+      } = useForm({
+        mode: 'onSubmit',
+        resolver: yupResolver(schema),
+      });
 
     const handleShowPassword = () => {
         setShowPassword(!showPassword);
     }
-
-    const handleKeyDown = (e, buttonRef) => {
-        const isCharacterKey = e.key.length === 1;
-
-        if (e.type === 'keydown' && isCharacterKey && buttonRef.current && e.target === buttonRef.current) {
-            console.log(1)
-          if (buttonRef === loginRef) {
-            setErrorMessage(false);
-          } else if (buttonRef === passwordRef) {
-            setErrorMessage(false);
-          }
-        }
-      };
 
     return (
         <>
         <Head>
             <title>Войти в WebConnect</title>
         </Head>
-            <div className="flex items-center justify-center h-screen w-full max-w-sm mx-auto">
-                <div className="flex flex-col gap-6 w-full">
+            <div className="flex flex-col items-center justify-center h-screen w-full max-w-sm mx-auto">
+            <div className="flex items-center justify-center mb-16 ">
+            {!userId ? ( 
+                <span className="text-2xl font-bold text-white"> Добро пожаловать! </span>
+            ) : ( 
+                <span className="text-2xl font-bold text-white"> С Возвращением, </span>
+            )}
+            </div>
+                <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6 w-full">
                     <div className="flex flex-col gap-3 relative">
                         <motion.div 
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 20 }}
                         transition={{ duration: 0.5 }}
-                        className={`${errorMessage ? ( '' ) : ( 'hidden' ) } absolute -top-20 px-4 py-2 text-sm font-semibold bg-[#FF6270]/50 border-[#FF6270] border text-white rounded-xl w-full`}>
+                        className={`${errors.emailOrLogin ||  errors.password ||  errorMessage ? ( '' ) : ( 'hidden' ) } absolute -top-14 px-4 py-2 text-sm font-semibold bg-[#FF6270]/50 border-[#FF6270] border text-white rounded-xl w-full`}>
                         
                             <div className="flex items-center gap-3">
                                 <svg width="20" height="22" viewBox="0 0 20 22" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -49,21 +94,26 @@ export default function Login() {
                                 </svg>
                                 <div className="flex flex-col">
                                     <span>Произошла ошибка</span>
-                                    <span className="text-[13px] text-white/70 font-light">Пожалуйста повторите попытку позднее.</span>
+                                    <span className="text-[13px] text-white/70 font-light">
+                                    {/* {errors.emailOrLogin && ( 
+                                    ) : ( 
+                                    )}
+                                    Пожалуйста повторите попытку позднее. */}
+                                    </span>
                                 </div>
                             </div>
 
                         </motion.div>
                         <div className="flex flex-col gap-3">
                             <span className="text-[#7F91A4] font-semibold text-[13px]">Логин или Email</span>
-                            <input tabIndex="0" ref={loginRef} onKeyDown={(e) => handleKeyDown(e, loginRef)} className={`px-4 py-2 text-md font-semibold bg-transparent border border-[#768A9E]/20 w-full rounded-lg text-white duration-200 ${errorMessage ? ('hover:border-[#FF6270] border-[#FF6270] focus:ring-2 focus:ring-[#FF6270]') : ('hover:border-[#7177F8] focus:ring-2 focus:ring-[#7177F8]')} outline-none ring-0`}/>
-                            <span></span>
+                            <input {...register("emailOrLogin")} className={`px-4 py-2 text-md font-semibold bg-transparent border border-[#768A9E]/20 w-full rounded-lg text-white duration-200 ${errors.emailOrLogin ? ('hover:border-[#FF6270] border-[#FF6270] focus:ring-2 focus:ring-[#FF6270]') : ('hover:border-[#7177F8] focus:ring-2 focus:ring-[#7177F8]')} outline-none ring-0`}/>
+                            <span className={`${errors.emailOrLogin ? '' : 'hidden' } text-sm text-[#FF6270]`}>Введите корректный логин</span>
                         </div>
                         <div className="flex flex-col gap-3">
                             <span className="text-[#7F91A4] font-semibold text-[13px]">Пароль</span>
                             <div className="relative">
-                                <input tabIndex="0" ref={passwordRef} onKeyDown={(e) => handleKeyDown(e, passwordRef)} type={showPassword ? 'text' : 'password'} className={`px-4 pr-12 py-2 text-md font-semibold bg-transparent border border-[#768A9E]/20 w-full rounded-lg text-white duration-200 ${errorMessage ? ('hover:border-[#FF6270] border-[#FF6270] focus:ring-2 focus:ring-[#FF6270]') : ('hover:border-[#7177F8] focus:ring-2 focus:ring-[#7177F8]')} outline-none ring-0`}/>
-                                <button onClick={handleShowPassword} className="flex items-center justify-center absolute right-3 top-[50%] -translate-y-[50%] group">
+                                <input {...register("password")} type={showPassword ? 'text' : 'password'} className={`px-4 pr-12 py-2 text-md font-semibold bg-transparent border border-[#768A9E]/20 w-full rounded-lg text-white duration-200 ${errors.password ? ('hover:border-[#FF6270] border-[#FF6270] focus:ring-2 focus:ring-[#FF6270]') : ('hover:border-[#7177F8] focus:ring-2 focus:ring-[#7177F8]')} outline-none ring-0`}/>
+                                <button type="button" onClick={handleShowPassword} className="flex items-center justify-center absolute right-3 top-[50%] -translate-y-[50%] group">
                                     {showPassword ? (
                                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="*:fill-[#7F91A4] group-hover:*:fill-white" xmlns="http://www.w3.org/2000/svg">
                                         <path d="M2 5.27L3.28 4L20 20.72L18.73 22L15.65 18.92C14.5 19.3 13.28 19.5 12 19.5C7 19.5 2.73 16.39 1 12C1.69 10.24 2.79 8.69 4.19 7.46L2 5.27ZM12 9C12.7956 9 13.5587 9.31607 14.1213 9.87868C14.6839 10.4413 15 11.2044 15 12C15.0005 12.3406 14.943 12.6787 14.83 13L11 9.17C11.3213 9.05698 11.6594 8.99949 12 9ZM12 4.5C17 4.5 21.27 7.61 23 12C22.1834 14.0729 20.7966 15.8723 19 17.19L17.58 15.76C18.9629 14.8034 20.0783 13.5091 20.82 12C20.0117 10.3499 18.7565 8.95963 17.1974 7.98735C15.6382 7.01508 13.8375 6.49976 12 6.5C10.91 6.5 9.84 6.68 8.84 7L7.3 5.47C8.74 4.85 10.33 4.5 12 4.5ZM3.18 12C3.98835 13.6501 5.24346 15.0404 6.80264 16.0126C8.36182 16.9849 10.1625 17.5002 12 17.5C12.69 17.5 13.37 17.43 14 17.29L11.72 15C11.0242 14.9254 10.3748 14.6149 9.87997 14.12C9.38512 13.6252 9.07458 12.9758 9 12.28L5.6 8.87C4.61 9.72 3.78 10.78 3.18 12Z"/>
@@ -75,12 +125,13 @@ export default function Login() {
                                     )}
                                 </button>
                             </div>
+                            <span className={`${errors.password ? '' : 'hidden' } text-sm text-[#FF6270]`}>Введите корректный пароль</span>
                         </div>
                     </div>
-                    <button className="mt-2 px-[20px] py-[10px] text-md font-semibold flex items-center justify-center bg-[#7177F8] hover:bg-[#525AFF] duration-150 rounded-xl text-white text-sm">
+                    <button type="submit" className="mt-2 px-[20px] py-[10px] text-md font-semibold flex items-center justify-center bg-[#7177F8] hover:bg-[#525AFF] duration-150 rounded-xl text-white text-sm">
                         {isLoading ? ( <Spinner/> ) : ( 'Войти в панель управления' ) }
                     </button>
-                </div>
+                </form>
             </div>
         </>
     );
