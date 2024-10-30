@@ -86,7 +86,7 @@ export default function Login({ context }) {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 20 }}
                         transition={{ duration: 0.5 }}
-                        className={`${errors.emailOrLogin ||  errors.password ||  errorMessage ? ( '' ) : ( 'hidden' ) } absolute -top-14 px-4 py-2 text-sm font-semibold bg-[#FF6270]/50 border-[#FF6270] border text-white rounded-xl w-full`}>
+                        className={`${errors.emailOrLogin ||  errors.password ||  errorMessage ? ( '' ) : ( 'hidden' ) } absolute -top-14git  px-4 py-2 text-sm font-semibold bg-[#FF6270]/50 border-[#FF6270] border text-white rounded-xl w-full`}>
                         
                             <div className="flex items-center gap-3">
                                 <svg width="20" height="22" viewBox="0 0 20 22" fill="none" xmlns="http://www.w3.org/2000/svg">
