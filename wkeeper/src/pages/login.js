@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Head from 'next/head';
 import Spinner from '@/components/Spinner';
 import Image from 'next/image';
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import Cookies from 'js-cookie';
 import * as yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -18,7 +18,7 @@ const schema = yup.object().shape({
     password: yup
       .string()
       .required('Введите пароль')
-      .min(2, 'Пароль должен быть минимум 2 символа'),
+      .min(8, 'Пароль должен быть минимум 8 символов'),
   });
   
   const onSubmit = (data) => {
@@ -47,12 +47,6 @@ const schema = yup.object().shape({
   }
 
 export default function Login({ context }) {
-    const [isLoading, setIsLoading] = useState(false);
-    const [showPassword, setShowPassword] = useState(false);
-    const [errorMessage, setErrorMessage] = useState(false);
-    const cookies = parseCookies(context);
-    const userId = cookies.user_id;
-    
     const {
         register,
         handleSubmit,
@@ -62,10 +56,24 @@ export default function Login({ context }) {
         resolver: yupResolver(schema),
       });
 
+    const [isLoading, setIsLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+    const [errorMessage, setErrorMessage] = useState(false);
+    const showError = errors.emailOrLogin || errors.password || errorMessage;
+    const cookies = parseCookies(context);
+    const userId = cookies.user_id;
+    const [errorCount, setErrorCount] = useState(0);
+        
     const handleShowPassword = () => {
         setShowPassword(!showPassword);
     }
-
+    
+    useEffect((errors) => {
+        // Обновляем количество ошибок, чтобы влиять на max-height
+        setErrorCount(Object.keys(errors).length);
+      }, [errors]);
+    
+    
     return (
         <>
         <Head>
@@ -79,14 +87,23 @@ export default function Login({ context }) {
                 <span className="text-2xl font-bold text-white"> С Возвращением, </span>
             )}
             </div>
-                <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6 w-full">
+                    <form
+                      onSubmit={handleSubmit(onSubmit)}
+                      className="flex flex-col gap-6 w-full overflow-hidden transition-all duration-300 ease-in-out"
+                      style={{
+                        maxHeight: `${300 + errorCount * 40}px`, // Увеличиваем max-height в зависимости от количества ошибок
+                      }}
+                    >
                     <div className="flex flex-col gap-3 relative">
+                    <div className="absolute -top-14 w-full ">
+                    <AnimatePresence>
+                    {showError && (
                         <motion.div 
-                        initial={{ opacity: 0, y: 20 }}
+                        initial={{ opacity: 0, y: 15 }}
                         animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 20 }}
-                        transition={{ duration: 0.5 }}
-                        className={`${errors.emailOrLogin ||  errors.password ||  errorMessage ? ( '' ) : ( 'hidden' ) } absolute -top-14git  px-4 py-2 text-sm font-semibold bg-[#FF6270]/50 border-[#FF6270] border text-white rounded-xl w-full`}>
+                        exit={{ opacity: 0, y: 15 }}
+                        transition={{ duration: 0.3 }}
+                        className={`px-4 py-2 text-sm font-semibold bg-[#FF6270]/50 border-[#FF6270] border text-white rounded-xl w-full`}>
                         
                             <div className="flex items-center gap-3">
                                 <svg width="20" height="22" viewBox="0 0 20 22" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -104,10 +121,24 @@ export default function Login({ context }) {
                             </div>
 
                         </motion.div>
+                        )}
+                        </AnimatePresence>
+                        </div>
                         <div className="flex flex-col gap-3">
                             <span className="text-[#7F91A4] font-semibold text-[13px]">Логин или Email</span>
                             <input {...register("emailOrLogin")} className={`px-4 py-2 text-md font-semibold bg-transparent border border-[#768A9E]/20 w-full rounded-lg text-white duration-200 ${errors.emailOrLogin ? ('hover:border-[#FF6270] border-[#FF6270] focus:ring-2 focus:ring-[#FF6270]') : ('hover:border-[#7177F8] focus:ring-2 focus:ring-[#7177F8]')} outline-none ring-0`}/>
-                            <span className={`${errors.emailOrLogin ? '' : 'hidden' } text-sm text-[#FF6270]`}>Введите корректный логин</span>
+                            <AnimatePresence>
+                            {errors.emailOrLogin && ( 
+                            <motion.div
+                            initial={{ opacity: 0, y: -15 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -15 }}
+                            transition={{ duration: 0.3 }}
+                            >
+                            <span className={`text-sm text-[#FF6270]`}>Введите корректный логин</span>
+                            </motion.div>
+                            )}
+                            </AnimatePresence>
                         </div>
                         <div className="flex flex-col gap-3">
                             <span className="text-[#7F91A4] font-semibold text-[13px]">Пароль</span>
@@ -125,7 +156,18 @@ export default function Login({ context }) {
                                     )}
                                 </button>
                             </div>
+                            <AnimatePresence>
+                            {errors.password && ( 
+                            <motion.div
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ duration: 0.2 }}
+                            >
                             <span className={`${errors.password ? '' : 'hidden' } text-sm text-[#FF6270]`}>Введите корректный пароль</span>
+                            </motion.div>
+                        )}
+                        </AnimatePresence>
                         </div>
                     </div>
                     <button type="submit" className="mt-2 px-[20px] py-[10px] text-md font-semibold flex items-center justify-center bg-[#7177F8] hover:bg-[#525AFF] duration-150 rounded-xl text-white text-sm">
