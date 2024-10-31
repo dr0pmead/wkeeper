@@ -1,13 +1,20 @@
-// components/Loading.js
-import { Spinner } from '@nextui-org/react'; // или любой другой спиннер
+import { motion, AnimatePresence } from 'framer-motion';
+import Spinner from './Spinner';
 
-const Loading = () => {
+const LoadingComponent = () => {
   return (
-    <div className="loading-container">
-      <Spinner size="large" />
-      <p>Загрузка...</p>
-    </div>
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1}}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.3 }}
+        className="loading-container w-full h-screen bg-[#7177F8] flex items-center justify-center"
+      >
+        <Spinner size="lg" />
+      </motion.div>
+    </AnimatePresence>
   );
 };
 
-export default Loading;
+export default LoadingComponent;

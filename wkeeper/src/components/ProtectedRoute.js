@@ -12,14 +12,14 @@ const ProtectedRoute = ({ children }) => {
     const token = Cookies.get('auth_token');
 
     if (!token) {
-      router.push('/login'); // Перенаправление на страницу входа, если токена нет
+      router.push('/login'); // Если токена нет, перенаправляем на страницу входа
     } else {
-      setIsLoading(false); // Отключаем загрузку, если токен есть
+      setIsLoading(false); // Если токен есть, отключаем загрузку
     }
   }, [router]);
 
   if (isLoading) {
-    return <Loading />; // Показываем компонент загрузки для всего приложения
+    return <Loading />; // Показываем компонент загрузки, пока идет проверка
   }
 
   return children;

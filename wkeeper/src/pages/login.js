@@ -8,6 +8,7 @@ import * as yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useForm } from 'react-hook-form';
 import { parseCookies } from 'nookies';
+import { authenticateUser } from '@/utils/api';
 
 const schema = yup.object().shape({
     emailOrLogin: yup
@@ -21,30 +22,24 @@ const schema = yup.object().shape({
       .min(8, 'Пароль должен быть минимум 8 символов'),
   });
   
-  const onSubmit = (data) => {
-    // Логика отправки данных
-    console.log(data);
-  };
 
-  export async function getServerSideProps(context) {
+export async function getServerSideProps(context) {
     const cookies = parseCookies(context);
     const token = cookies.token;
-    
-  
-    // Если токен и user_id присутствуют, перенаправляем на главную страницу
+
     if (token) {
-      return {
+        return {
         redirect: {
-          destination: '/',
-          permanent: false,
+            destination: '/',
+            permanent: false,
         },
-      };
+        };
     }
-  
+
     return {
-      props: {}, // Данные для страницы логина
+        props: {}, // Данные для страницы логина
     };
-  }
+}
 
 export default function Login({ context }) {
     const {
@@ -59,7 +54,6 @@ export default function Login({ context }) {
     const [isLoading, setIsLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [errorMessage, setErrorMessage] = useState(false);
-    const showError = errors.emailOrLogin || errors.password || errorMessage;
     const cookies = parseCookies(context);
     const userId = cookies.user_id;
     const [errorCount, setErrorCount] = useState(0);
@@ -70,16 +64,33 @@ export default function Login({ context }) {
     
     useEffect((errors) => {
         // Обновляем количество ошибок, чтобы влиять на max-height
-        setErrorCount(Object.keys(errors).length);
+        setErrorCount(errors ? Object.keys(errors).length : 0);
       }, [errors]);
-    
+
+      const onSubmit = async (data) => {
+        setIsLoading(true); // Устанавливаем состояние загрузки
+        setErrorMessage(''); 
+        try {
+            const response = await authenticateUser(data.username, data.password); // Ожидаем ответ
+            console.log('User authenticated:', response);
+            setIsLoading(false);
+            // Добавьте сюда логику после успешной аутентификации
+        } catch (err) {
+            console.error('Authentication error:', err);
+            setErrorMessage('Authentication failed. Please check your credentials.');
+            setIsLoading(false);
+        }
+    };
+
     
     return (
         <>
         <Head>
             <title>Войти в WebConnect</title>
         </Head>
-            <div className="flex flex-col items-center justify-center h-screen w-full max-w-sm mx-auto">
+        <div className="w-full h-screen relative">
+                <Image src="/assets/img/logo_main.svg" alt="WebConnect" width={200} height={18} className="top-5 left-5 absolute"/>
+            <div className="flex flex-col items-center justify-center h-screen w-full max-w-sm mx-auto ">
             <div className="flex items-center justify-center mb-16 ">
             {!userId ? ( 
                 <span className="text-2xl font-bold text-white"> Добро пожаловать! </span>
@@ -89,7 +100,7 @@ export default function Login({ context }) {
             </div>
                     <form
                       onSubmit={handleSubmit(onSubmit)}
-                      className="flex flex-col gap-6 w-full overflow-hidden transition-all duration-300 ease-in-out"
+                      className="flex flex-col gap-6 w-full transition-all duration-300 ease-in-out"
                       style={{
                         maxHeight: `${300 + errorCount * 40}px`, // Увеличиваем max-height в зависимости от количества ошибок
                       }}
@@ -97,7 +108,7 @@ export default function Login({ context }) {
                     <div className="flex flex-col gap-3 relative">
                     <div className="absolute -top-14 w-full ">
                     <AnimatePresence>
-                    {showError && (
+                    {errorMessage && (
                         <motion.div 
                         initial={{ opacity: 0, y: 15 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -112,10 +123,7 @@ export default function Login({ context }) {
                                 <div className="flex flex-col">
                                     <span>Произошла ошибка</span>
                                     <span className="text-[13px] text-white/70 font-light">
-                                    {/* {errors.emailOrLogin && ( 
-                                    ) : ( 
-                                    )}
-                                    Пожалуйста повторите попытку позднее. */}
+                                        {errorMessage}
                                     </span>
                                 </div>
                             </div>
@@ -126,13 +134,13 @@ export default function Login({ context }) {
                         </div>
                         <div className="flex flex-col gap-3">
                             <span className="text-[#7F91A4] font-semibold text-[13px]">Логин или Email</span>
-                            <input {...register("emailOrLogin")} className={`px-4 py-2 text-md font-semibold bg-transparent border border-[#768A9E]/20 w-full rounded-lg text-white duration-200 ${errors.emailOrLogin ? ('hover:border-[#FF6270] border-[#FF6270] focus:ring-2 focus:ring-[#FF6270]') : ('hover:border-[#7177F8] focus:ring-2 focus:ring-[#7177F8]')} outline-none ring-0`}/>
+                            <input disabled={isLoading} {...register("emailOrLogin")} className={`disabled:pointer-events-none disabled:bg-[#768A9E]/20 px-4 py-2 text-md font-semibold bg-transparent border border-[#768A9E]/20 w-full rounded-lg text-white duration-200 ${errors.emailOrLogin ? ('hover:border-[#FF6270] border-[#FF6270] focus:ring-2 focus:ring-[#FF6270]') : ('hover:border-[#7177F8] focus:ring-2 focus:ring-[#7177F8]')} outline-none ring-0`}/>
                             <AnimatePresence>
                             {errors.emailOrLogin && ( 
                             <motion.div
-                            initial={{ opacity: 0, y: -15 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -15 }}
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
                             transition={{ duration: 0.3 }}
                             >
                             <span className={`text-sm text-[#FF6270]`}>Введите корректный логин</span>
@@ -143,7 +151,10 @@ export default function Login({ context }) {
                         <div className="flex flex-col gap-3">
                             <span className="text-[#7F91A4] font-semibold text-[13px]">Пароль</span>
                             <div className="relative">
-                                <input {...register("password")} type={showPassword ? 'text' : 'password'} className={`px-4 pr-12 py-2 text-md font-semibold bg-transparent border border-[#768A9E]/20 w-full rounded-lg text-white duration-200 ${errors.password ? ('hover:border-[#FF6270] border-[#FF6270] focus:ring-2 focus:ring-[#FF6270]') : ('hover:border-[#7177F8] focus:ring-2 focus:ring-[#7177F8]')} outline-none ring-0`}/>
+                                <input disabled={isLoading} {...register("password")} type={showPassword ? 'text' : 'password'} className={`disabled:pointer-events-none disabled:bg-[#768A9E]/20 px-4 pr-12 py-2 text-md font-semibold bg-transparent border border-[#768A9E]/20 w-full rounded-lg text-white duration-200 ${errors.password ? ('hover:border-[#FF6270] border-[#FF6270] focus:ring-2 focus:ring-[#FF6270]') : ('hover:border-[#7177F8] focus:ring-2 focus:ring-[#7177F8]')} outline-none ring-0`}/>
+                                {isLoading ? ( 
+                                    ''
+                                ) : ( 
                                 <button type="button" onClick={handleShowPassword} className="flex items-center justify-center absolute right-3 top-[50%] -translate-y-[50%] group">
                                     {showPassword ? (
                                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="*:fill-[#7F91A4] group-hover:*:fill-white" xmlns="http://www.w3.org/2000/svg">
@@ -155,13 +166,14 @@ export default function Login({ context }) {
                                         </svg>                                        
                                     )}
                                 </button>
+                                )}
                             </div>
                             <AnimatePresence>
                             {errors.password && ( 
                             <motion.div
-                            initial={{ opacity: 0, y: -10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -10 }}
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
                             transition={{ duration: 0.2 }}
                             >
                             <span className={`${errors.password ? '' : 'hidden' } text-sm text-[#FF6270]`}>Введите корректный пароль</span>
@@ -170,10 +182,11 @@ export default function Login({ context }) {
                         </AnimatePresence>
                         </div>
                     </div>
-                    <button type="submit" className="mt-2 px-[20px] py-[10px] text-md font-semibold flex items-center justify-center bg-[#7177F8] hover:bg-[#525AFF] duration-150 rounded-xl text-white text-sm">
-                        {isLoading ? ( <Spinner/> ) : ( 'Войти в панель управления' ) }
+                    <button disabled={isLoading} type="submit" className="disabled:pointer-events-none disabled:opacity-80 mt-2 px-[20px] py-[10px] text-md font-semibold flex items-center justify-center bg-[#7177F8] hover:bg-[#525AFF] duration-150 rounded-xl text-white text-sm">
+                        {isLoading ? ( <Spinner size="sm"/> ) : ( 'Войти в панель управления' ) }
                     </button>
                 </form>
+            </div>
             </div>
         </>
     );
