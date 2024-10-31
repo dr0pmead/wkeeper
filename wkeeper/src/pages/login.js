@@ -53,31 +53,36 @@ export default function Login({ context }) {
 
     const [isLoading, setIsLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
-    const [errorMessage, setErrorMessage] = useState(false);
+    const [errorMessage, setErrorMessage] = useState('');
     const cookies = parseCookies(context);
     const userId = cookies.user_id;
-    const [errorCount, setErrorCount] = useState(0);
+    const [loginValue, setLoginValue] = useState('');
+    const [passwordValue, setPasswordValue] = useState('');
+    
+    const changeLoginValue = () => {
+      setErrorMessage(''); // очищаем сообщение об ошибке
+    };
+    
+    const changePasswordValue = () => {
+      setErrorMessage(''); // очищаем сообщение об ошибке
+    };
         
     const handleShowPassword = () => {
         setShowPassword(!showPassword);
     }
     
-    useEffect((errors) => {
-        // Обновляем количество ошибок, чтобы влиять на max-height
-        setErrorCount(errors ? Object.keys(errors).length : 0);
-      }, [errors]);
-
       const onSubmit = async (data) => {
-        setIsLoading(true); // Устанавливаем состояние загрузки
-        setErrorMessage(''); 
-        try {
-            const response = await authenticateUser(data.username, data.password); // Ожидаем ответ
-            console.log('User authenticated:', response);
+        setIsLoading(true);
+        setErrorMessage(''); // Сбрасываем сообщение об ошибке перед запросом
+    
+        const response = await authenticateUser(data.emailOrLogin, data.password);
+    
+        if (response.success) {
+            console.log('User authenticated:', response.data);
             setIsLoading(false);
-            // Добавьте сюда логику после успешной аутентификации
-        } catch (err) {
-            console.error('Authentication error:', err);
-            setErrorMessage('Authentication failed. Please check your credentials.');
+            // Логика после успешной аутентификации
+        } else {
+            setErrorMessage(response.error); // Отображаем сообщение об ошибке
             setIsLoading(false);
         }
     };
@@ -90,8 +95,9 @@ export default function Login({ context }) {
         </Head>
         <div className="w-full h-screen relative">
                 <Image src="/assets/img/logo_main.svg" alt="WebConnect" width={200} height={18} className="top-5 left-5 absolute"/>
-            <div className="flex flex-col items-center justify-center h-screen w-full max-w-sm mx-auto ">
-            <div className="flex items-center justify-center mb-16 ">
+            <div className="flex flex-col items-center justify-start h-screen w-full max-w-md mx-auto gap-6 pt-36 px-6">
+            <div className="flex items-center justify-center mb-20 flex-col gap-6">
+            <Image src="/assets/img/wavingHand.svg" alt="welcome back" width={75} height={75}/>
             {!userId ? ( 
                 <span className="text-2xl font-bold text-white"> Добро пожаловать! </span>
             ) : ( 
@@ -102,18 +108,18 @@ export default function Login({ context }) {
                       onSubmit={handleSubmit(onSubmit)}
                       className="flex flex-col gap-6 w-full transition-all duration-300 ease-in-out"
                       style={{
-                        maxHeight: `${300 + errorCount * 40}px`, // Увеличиваем max-height в зависимости от количества ошибок
+                        maxHeight: 'auto', // Увеличиваем max-height в зависимости от количества ошибок
                       }}
                     >
                     <div className="flex flex-col gap-3 relative">
-                    <div className="absolute -top-14 w-full ">
+                    <div className="absolute -top-20 w-full ">
                     <AnimatePresence>
                     {errorMessage && (
                         <motion.div 
                         initial={{ opacity: 0, y: 15 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 15 }}
-                        transition={{ duration: 0.3 }}
+                        transition={{ duration: 0.2 }}
                         className={`px-4 py-2 text-sm font-semibold bg-[#FF6270]/50 border-[#FF6270] border text-white rounded-xl w-full`}>
                         
                             <div className="flex items-center gap-3">
@@ -134,7 +140,7 @@ export default function Login({ context }) {
                         </div>
                         <div className="flex flex-col gap-3">
                             <span className="text-[#7F91A4] font-semibold text-[13px]">Логин или Email</span>
-                            <input disabled={isLoading} {...register("emailOrLogin")} className={`disabled:pointer-events-none disabled:bg-[#768A9E]/20 px-4 py-2 text-md font-semibold bg-transparent border border-[#768A9E]/20 w-full rounded-lg text-white duration-200 ${errors.emailOrLogin ? ('hover:border-[#FF6270] border-[#FF6270] focus:ring-2 focus:ring-[#FF6270]') : ('hover:border-[#7177F8] focus:ring-2 focus:ring-[#7177F8]')} outline-none ring-0`}/>
+                            <input onChange={(e) => setLoginValue(e.target.value)} onKeyDown={changeLoginValue} disabled={isLoading} {...register("emailOrLogin")} className={`disabled:pointer-events-none disabled:bg-[#768A9E]/20 px-4 py-2 text-md font-semibold bg-transparent border border-[#768A9E]/20 w-full rounded-lg text-white duration-200 ${errors.emailOrLogin ? ('hover:border-[#FF6270] border-[#FF6270] focus:ring-2 focus:ring-[#FF6270]') : ('hover:border-[#7177F8] focus:ring-2 focus:ring-[#7177F8]')} outline-none ring-0`}/>
                             <AnimatePresence>
                             {errors.emailOrLogin && ( 
                             <motion.div
@@ -151,7 +157,7 @@ export default function Login({ context }) {
                         <div className="flex flex-col gap-3">
                             <span className="text-[#7F91A4] font-semibold text-[13px]">Пароль</span>
                             <div className="relative">
-                                <input disabled={isLoading} {...register("password")} type={showPassword ? 'text' : 'password'} className={`disabled:pointer-events-none disabled:bg-[#768A9E]/20 px-4 pr-12 py-2 text-md font-semibold bg-transparent border border-[#768A9E]/20 w-full rounded-lg text-white duration-200 ${errors.password ? ('hover:border-[#FF6270] border-[#FF6270] focus:ring-2 focus:ring-[#FF6270]') : ('hover:border-[#7177F8] focus:ring-2 focus:ring-[#7177F8]')} outline-none ring-0`}/>
+                                <input onChange={(e) => setPasswordValue(e.target.value)} onKeyDown={changePasswordValue} disabled={isLoading} {...register("password")} type={showPassword ? 'text' : 'password'} className={`disabled:pointer-events-none disabled:bg-[#768A9E]/20 px-4 pr-12 py-2 text-md font-semibold bg-transparent border border-[#768A9E]/20 w-full rounded-lg text-white duration-200 ${errors.password ? ('hover:border-[#FF6270] border-[#FF6270] focus:ring-2 focus:ring-[#FF6270]') : ('hover:border-[#7177F8] focus:ring-2 focus:ring-[#7177F8]')} outline-none ring-0`}/>
                                 {isLoading ? ( 
                                     ''
                                 ) : ( 

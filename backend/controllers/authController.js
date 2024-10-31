@@ -1,11 +1,11 @@
 const Users = require('../models/Users.cjs');
 
 
-async function authorization(req, res) {
-    console.log('accept')
-    res.status(502).json({});
-}
 
+const authorization = async (req, res) => {
+    console.log('accept')
+    res.status(502).json({ message: 'Неверный логин или пароль' });
+}
 module.exports = {
     authorization
 };

@@ -7,14 +7,12 @@ const api = axios.create({
 
 export const authenticateUser = async (username, password) => {
     try {
-        const response = await api.post('/users/auth', {
-            username,
-            password,
-        });
-        console.log('Успешная авторизация:', response.data);
+        const response = await api.post('/users/auth', { username, password });
         return { success: true, data: response.data };
     } catch (error) {
-        console.error('Ошибка авторизации:', error);
-        return { success: false, error: error.response?.data || 'Ошибка авторизации' }; // Возвращаем объект ошибки
+        return {
+            success: false,
+            error: error.response?.data?.message || 'Произошла ошибка. Пожалуйста, попробуйте позже.',
+        };
     }
 };
