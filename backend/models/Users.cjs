@@ -6,12 +6,13 @@ const UserSchema = new mongoose.Schema({
     password: { type: String, required: true },
     role: { type: String, enum: ['admin', 'editor', 'viewer'], default: 'viewer' },
     permissions: { type: [String], default: [] },
-    status: { type: String, enum: ['active', 'inactive', 'banned'], default: 'active' },
     lastLogin: { type: Date },
     loginHistory: [{
-    time: { type: Date },
-    success: { type: Boolean },
+        time: { type: Date },
+        success: { type: Boolean },
     }],
+    twofaEnable: { type: Boolean },
+    twofaSecret: { type: String, unique: true }
 });
 
 module.exports = mongoose.model('User', UserSchema);

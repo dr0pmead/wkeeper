@@ -9,7 +9,7 @@ const ProtectedRoute = ({ children }) => {
   const router = useRouter();
 
   useEffect(() => {
-    const token = Cookies.get('auth_token');
+    const token = Cookies.get('token');
 
     if (!token) {
       router.push('/login'); // Если токена нет, перенаправляем на страницу входа

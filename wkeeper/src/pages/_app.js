@@ -1,6 +1,5 @@
 // pages/_app.js
 import { NextUIProvider } from '@nextui-org/react';
-import AuthLayout from '@/components/AuthLayout';
 import { UserProvider } from '@/components/UserContext'; 
 
 import ProtectedRoute from '../components/ProtectedRoute';
@@ -18,11 +17,16 @@ function MyApp({ Component, pageProps, router }) {
   return (
     <NextUIProvider>
       {isAuthRequired ? (
+        
         <ProtectedRoute>
+          <UserProvider>
           <Component {...pageProps} />
+          </UserProvider>
         </ProtectedRoute>
       ) : (
+        <UserProvider>
         <Component {...pageProps} />
+        </UserProvider>
       )}
     </NextUIProvider>
   );
