@@ -9,7 +9,7 @@ const LoadingComponent = () => {
         animate={{ opacity: 1}}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.3 }}
-        className="loading-container w-full h-screen bg-[#7177F8] flex items-center justify-center"
+        className="loading-container w-full h-screen bg-[#17212B] flex items-center justify-center backdrop-blur-lg"
       >
         <Spinner size="lg" />
       </motion.div>

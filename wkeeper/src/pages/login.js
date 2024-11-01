@@ -24,23 +24,24 @@ const schema = yup.object().shape({
   });
   
 
-// export async function getServerSideProps(context) {
-//     const cookies = parseCookies(context);
-//     const token = cookies.token;
+export async function getServerSideProps(context) {
+    const cookies = parseCookies(context);
+    const token = cookies.token;
 
-//     if (token) {
-//         return {
-//         redirect: {
-//             destination: '/',
-//             permanent: false,
-//         },
-//         };
-//     }
+    if (token) {
+        return {
+            redirect: {
+                destination: '/equipment',
+                permanent: false,
+            },
+        };
+    }
 
-//     return {
-//         props: {}, // Данные для страницы логина
-//     };
-// }
+    return {
+        props: {}, // данные для страницы логина
+    };
+}
+
 
 export default function Login({ context }) {
     const {
@@ -93,19 +94,16 @@ export default function Login({ context }) {
                     setQrCode(response.data.qrcode);
                     setManualCode(response.data.manualCode);
                     setWelcomMessage(response.data.message);
-                    setUserIdServer(response.data.userId); // сохраняем userId
-    
+                    setUserIdServer(response.data.userId);
                 } else if (response.data.twofaEnable) {
                     setIsTwoFA(true);
                     setIsAuthTwoFA(true);
-                    setUserIdServer(response.data.userId); // сохраняем userId
-                    setWelcomMessage('Введите 6-ти значный код из приложения.');
+                    setUserIdServer(response.data.userId);
+                    setWelcomMessage('Подтверждение входа');
                 } else {
-                    // В случае, если оба условия ложны, значит, произошла ошибка
                     throw new Error('Неизвестное состояние авторизации. Пожалуйста, попробуйте позже.');
                 }
             } else {
-                // Если авторизация не успешна, обработаем сообщение об ошибке
                 setErrorMessage(response.error || 'Ошибка авторизации. Проверьте данные и попробуйте снова.');
             }
         } catch (error) {
@@ -116,31 +114,36 @@ export default function Login({ context }) {
         }
     };
     
-
+    useEffect(() => {
+        if ((twofaRequired || isAuthTwoFA) && inputRefs.current[0]) {
+            inputRefs.current[0].focus();
+        }
+    }, [twofaRequired, isAuthTwoFA]);
+    
     const handleChange = (index, value) => {
         setErrorMessage('');
         if (!isNaN(value) && value.length <= 1) {
             const newCode = [...code];
             newCode[index] = value;
             setCode(newCode);
-
-            // Если есть следующая ячейка и значение введено, переключаемся на следующий input
+    
             if (value && index < inputRefs.current.length - 1) {
-                inputRefs.current[index + 1].focus();
+                inputRefs.current[index + 1]?.focus();
+            } else if (index === inputRefs.current.length - 1) {
+                submitVerify(newCode);
             }
         }
     };
-
+    
+    // Обработчик для клавиши Backspace
     const handleKeyDown = (index, e) => {
         setErrorMessage('');
         if (e.key === 'Backspace') {
-            // Если удаляем символ, очищаем текущий input
             const newCode = [...code];
             newCode[index] = '';
             setCode(newCode);
-
-            // Если есть предыдущий input, переключаемся на него
-            if (index > 0) {
+    
+            if (index > 0 && inputRefs.current[index - 1]) {
                 inputRefs.current[index - 1].focus();
             }
         }
@@ -169,7 +172,7 @@ export default function Login({ context }) {
         <div className="w-full h-screen relative">
             
             <Image src="/assets/img/logo_main.svg" alt="WebConnect" width={200} height={18} className="top-5 left-5 absolute"/>
-            <div className={`flex flex-col items-center justify-start h-screen w-full max-w-md mx-auto gap-6 pt-36 px-6 ${isAuthTwoFA ? 'justify-center pt-0 gap-0' : ''}`}>
+            <div className={`flex flex-col items-center  h-screen w-full max-w-md mx-auto px-6 ${isAuthTwoFA ? 'justify-center pt-0 gap-0' : 'justify-start gap-6 pt-36'}`}>
             <div className={`flex items-center justify-center  ${welcomeMessage ? '' : 'mb-20' } flex-col gap-6`}>
                 {!welcomeMessage ? ( 
                     <Image src="/assets/img/wavingHand.svg" alt="welcome back" width={75} height={75}/>
@@ -188,7 +191,52 @@ export default function Login({ context }) {
             {isTwoFA ? (
                 <div className="flex flex-col gap-3 items-center">
                 {isAuthTwoFA ? ( 
-                    <div></div>
+                    <div className="flex flex-col gap-2">
+                    <span className="flex items-center text-white/50 text-center text-sm">Введите 6-ти значный код из своего приложения двухкратной аутентификации. </span>
+                    {errorMessage && (
+                    <motion.div 
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 15 }}
+                    transition={{ duration: 0.2 }}
+                    className={`px-4 py-2 text-sm font-semibold bg-[#FF6270]/50 border-[#FF6270] border text-white rounded-xl w-full`}>
+                    
+                        <div className="flex items-center gap-3">
+                            <svg width="20" height="22" viewBox="0 0 20 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M10 0C15.523 0 20 4.477 20 10C20 15.523 15.523 20 10 20C4.477 20 0 15.523 0 10C0 4.477 4.477 0 10 0ZM10 13C9.73478 13 9.48043 13.1054 9.29289 13.2929C9.10536 13.4804 9 13.7348 9 14C9 14.2652 9.10536 14.5196 9.29289 14.7071C9.48043 14.8946 9.73478 15 10 15C10.2652 15 10.5196 14.8946 10.7071 14.7071C10.8946 14.5196 11 14.2652 11 14C11 13.7348 10.8946 13.4804 10.7071 13.2929C10.5196 13.1054 10.2652 13 10 13ZM10 4C9.75507 4.00003 9.51866 4.08996 9.33563 4.25272C9.15259 4.41547 9.03566 4.63975 9.007 4.883L9 5V11C9.00028 11.2549 9.09788 11.5 9.27285 11.6854C9.44782 11.8707 9.68695 11.9822 9.94139 11.9972C10.1958 12.0121 10.4464 11.9293 10.6418 11.7657C10.8373 11.6021 10.9629 11.3701 10.993 11.117L11 11V5C11 4.73478 10.8946 4.48043 10.7071 4.29289C10.5196 4.10536 10.2652 4 10 4Z" fill="#FF6270"/>
+                            </svg>
+                            <div className="flex flex-col">
+                                <span>Произошла ошибка</span>
+                                <span className="text-[13px] text-white/70 font-light">
+                                    {errorMessage}
+                                </span>
+                            </div>
+                        </div>
+
+                    </motion.div>
+                    )}                                
+                <div className="grid grid-cols-6 gap-6 mt-4">
+                {code.map((value, index) => (
+                    <input
+                        key={index}
+                        ref={(el) => inputRefs.current[index] = el}
+                        type="text"
+                        maxLength="1"
+                        disabled={isLoading}
+                        value={value}
+                        onChange={(e) => handleChange(index, e.target.value)}
+                        onKeyDown={(e) => handleKeyDown(index, e)}
+                        className={`${errorMessage ? ('hover:border-[#FF6270] border-[#FF6270] focus:ring-2 focus:ring-[#FF6270]') : ( '' )} disabled:pointer-events-none disabled:bg-[#768A9E]/20 hover:border-[#7177F8] focus:ring-2 focus:ring-[#7177F8] text-center text-3xl px-2 py-2 text-md font-semibold bg-transparent border border-[#768A9E]/20 w-full rounded-lg text-white duration-200 outline-none ring-0`}
+                    />
+                ))}
+                </div>
+                <button 
+                    disabled={isLoading} 
+                    onClick={() => submitVerify(code)}
+                    className="disabled:pointer-events-none disabled:opacity-80 mt-2 px-[20px] py-[10px] w-full text-md font-semibold flex items-center justify-center bg-[#7177F8] hover:bg-[#525AFF] duration-150 rounded-xl text-white text-sm">
+                    {isLoading ? ( <Spinner size="sm"/> ) : ( 'Отправить' )}
+                </button>
+                    </div>
                 ) : ( 
                     <>
                 <span className="flex items-center text-white/50 text-center text-sm">Сканируйте QR-код </span>
@@ -197,8 +245,6 @@ export default function Login({ context }) {
                 </div>
                 <span className="flex items-center text-white/50 text-center text-sm">или используйте ручной код для настройки 2FA </span>
                 <button  className="bg-[#768A9E]/20 px-4 py-2 text-md font-semibold border border-[#768A9E]/20 w-full rounded-lg text-white duration-200 outline-none ring-0 flex items-center justify-center">  {manualCode} </button>
-                    </>
-                )}
                 {errorMessage && (
                     <motion.div 
                     initial={{ opacity: 0, y: 15 }}
@@ -222,26 +268,28 @@ export default function Login({ context }) {
                     </motion.div>
                     )}                                
                 <div className="grid grid-cols-6 gap-6 mt-4">
-                    {code.map((value, index) => (
-                        <input
-                            key={index}
-                            ref={(el) => inputRefs.current[index] = el}
-                            type="text"
-                            maxLength="1"
-                            disabled={isLoading}
-                            value={value}
-                            onChange={(e) => handleChange(index, e.target.value)}
-                            onKeyDown={(e) => handleKeyDown(index, e)}
-                            className={`${errorMessage ? ('hover:border-[#FF6270] border-[#FF6270] focus:ring-2 focus:ring-[#FF6270]') : ( '' )} disabled:pointer-events-none disabled:bg-[#768A9E]/20 hover:border-[#7177F8] focus:ring-2 focus:ring-[#7177F8] text-center text-3xl px-2 py-2 text-md font-semibold bg-transparent border border-[#768A9E]/20 w-full rounded-lg text-white duration-200 outline-none ring-0`}
-                        />
-                    ))}
+                {code.map((value, index) => (
+                    <input
+                        key={index}
+                        ref={(el) => inputRefs.current[index] = el}
+                        type="text"
+                        maxLength="1"
+                        disabled={isLoading}
+                        value={value}
+                        onChange={(e) => handleChange(index, e.target.value)}
+                        onKeyDown={(e) => handleKeyDown(index, e)}
+                        className={`${errorMessage ? ('hover:border-[#FF6270] border-[#FF6270] focus:ring-2 focus:ring-[#FF6270]') : ( '' )} disabled:pointer-events-none disabled:bg-[#768A9E]/20 hover:border-[#7177F8] focus:ring-2 focus:ring-[#7177F8] text-center text-3xl px-2 py-2 text-md font-semibold bg-transparent border border-[#768A9E]/20 w-full rounded-lg text-white duration-200 outline-none ring-0`}
+                    />
+                ))}
                 </div>
                 <button 
                     disabled={isLoading} 
-                    onClick={() => submitVerify(code)}  // Обернули в анонимную функцию
+                    onClick={() => submitVerify(code)}
                     className="disabled:pointer-events-none disabled:opacity-80 mt-2 px-[20px] py-[10px] w-full text-md font-semibold flex items-center justify-center bg-[#7177F8] hover:bg-[#525AFF] duration-150 rounded-xl text-white text-sm">
                     {isLoading ? ( <Spinner size="sm"/> ) : ( 'Отправить' )}
                 </button>
+                    </>
+                )}
             </div>
             ) : (
                 <form

@@ -11,15 +11,16 @@ const ProtectedRoute = ({ children }) => {
   useEffect(() => {
     const token = Cookies.get('token');
 
-    if (!token) {
-      router.push('/login'); // Если токена нет, перенаправляем на страницу входа
+    // Проверка на отсутствие токена и нахождение на странице, отличной от '/login'
+    if (!token && router.pathname !== '/login') {
+      router.replace('/login'); // Используем replace вместо push для предотвращения истории
     } else {
-      setIsLoading(false); // Если токен есть, отключаем загрузку
+      setIsLoading(false); // Завершаем состояние загрузки только если токен есть или мы на странице логина
     }
   }, [router]);
 
   if (isLoading) {
-    return <Loading />; // Показываем компонент загрузки, пока идет проверка
+    return <Loading />; // Показываем индикатор загрузки пока идет проверка
   }
 
   return children;
