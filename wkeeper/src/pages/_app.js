@@ -12,7 +12,6 @@ const authRequiredPaths = ['/equipment', '/protected-route', '/emails', '/users'
 function MyApp({ Component, pageProps, router }) {
     const isAuthRequired = authRequiredPaths.some((path) => router.pathname.startsWith(path));
     const showHeader = router.pathname !== '/login';
-    const isPublicRoute = router.asPath.startsWith('/equipment/');
     
   return (
     <NextUIProvider>
@@ -20,16 +19,14 @@ function MyApp({ Component, pageProps, router }) {
         
         <ProtectedRoute>
           <UserProvider>
-            <Header>
+          {showHeader && <Header />}
               <Component {...pageProps} />
-            </Header>
           </UserProvider>
         </ProtectedRoute>
       ) : (
         <UserProvider>
-        <Header>
+        {showHeader && <Header />}
           <Component {...pageProps} />
-        </Header>
       </UserProvider>
       )}
     </NextUIProvider>
