@@ -36,3 +36,24 @@ export const verifyTwoFA = async (userId, code) => {
         return { success: false, message: 'Ошибка верификации 2FA' };
     }
 };
+
+export const fetchAllDivisions = async () => {
+    try {
+        const response = await api.get('/division/getAll');
+        return response.data; // Возвращаем массив записей из коллекции division
+    } catch (error) {
+        console.error('Ошибка при получении данных из division:', error);
+        throw error; // Пробрасываем ошибку для обработки в компоненте
+    }
+};
+
+export const fetchEquipment = async (division, activeStatus) => {
+    try {
+        console.log('Параметры:', { division, activeStatus });
+        const response = await api.get(`/equipment/${encodeURIComponent(division)}/${activeStatus}`);
+        return response.data; // Возвращаем массив оборудования
+    } catch (error) {
+        console.error('Ошибка при получении данных оборудования:', error);
+        throw error; // Пробрасываем ошибку для обработки в компоненте
+    }
+};

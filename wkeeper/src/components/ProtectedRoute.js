@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import Cookies from 'js-cookie';
-import Loading from './Loading';
+import LoadingComponent from './Loading';
 
 const ProtectedRoute = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
@@ -20,7 +20,7 @@ const ProtectedRoute = ({ children }) => {
   }, [router]);
 
   if (isLoading) {
-    return <Loading />; // Показываем индикатор загрузки пока идет проверка
+    return <LoadingComponent />; // Показываем индикатор загрузки пока идет проверка
   }
 
   return children;

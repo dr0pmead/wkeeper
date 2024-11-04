@@ -1,4 +1,5 @@
 const mongoose = require('mongoose')
+const Schema = mongoose.Schema;
 
 // Описание схемы дисков
 const DiskSchema = new mongoose.Schema({
@@ -41,7 +42,7 @@ const EquipmentSchema = new mongoose.Schema({
     online: { type: Boolean, default: true },
     owner: { type: String, required: true },
     department: { type: String, required: true },
-    division: { type: String },
+    division: { type: Schema.Types.ObjectId, ref: 'Division' },
     lastUpdated: { type: Date, default: Date.now },
     osVersion: { type: String },
     inventoryNumber: { type: String, default: 'Неизвестен' },

@@ -1,5 +1,6 @@
 const QRCode = require('qrcode');
 const Equipment = require('../models/Equipment.cjs');
+const Division = require('../models/Division.cjs');
 
 const addEquipment = async (req, res) => {
     try {
@@ -7,17 +8,16 @@ const addEquipment = async (req, res) => {
         const disks = [];
         const components = [];
 
-        // Проверяем, существует ли запись с таким именем в базе данных
+        // Проверка на наличие записи с таким именем оборудования
         const existingEquipment = await Equipment.findOne({ name: computerInfo.name });
 
-        // Если запись найдена, извлекаем существующие компоненты, диски и другие данные
+        // Если оборудование найдено, получаем существующие диски и компоненты
         let existingDisks = existingEquipment ? existingEquipment.disks : [];
         let existingComponents = existingEquipment ? existingEquipment.components : [];
         
-        // Обрабатываем переданные компоненты
+        // Обработка компонентов
         computerInfo.components.forEach(component => {
             if (component.Type === 'Disk') {
-                // Проверяем, существует ли такой диск уже в базе
                 const existingDisk = existingDisks.find(disk => disk.Name === component.Name);
                 if (!existingDisk) {
                     disks.push({
@@ -52,11 +52,15 @@ const addEquipment = async (req, res) => {
             }
         });
 
-        // Добавляем в массив только новые данные
+        // Обновление компонентов и дисков
         const updatedComponents = [...existingComponents, ...components];
         const updatedDisks = [...existingDisks, ...disks];
 
-        // Создаем данные для обновления оборудования
+        // Поиск соответствующего объекта Division
+        const matchingDivision = await Division.findOne({ rusName: computerInfo.division });
+        const divisionObject = matchingDivision ? matchingDivision : null;
+
+        // Создание объекта данных оборудования
         const equipmentData = {
             name: computerInfo.name,
             anyDesk: computerInfo.anyDesk || existingEquipment?.anyDesk,
@@ -64,7 +68,7 @@ const addEquipment = async (req, res) => {
             osVersion: existingEquipment?.osVersion || computerInfo.osVersion,
             owner: existingEquipment?.owner || computerInfo.owner,
             department: existingEquipment?.department || computerInfo.department,
-            division: existingEquipment?.division || computerInfo.division,
+            division: divisionObject, // Сохраняем объект division, если он найден
             components: updatedComponents,
             disks: updatedDisks,
             ipAddress: {
@@ -81,7 +85,7 @@ const addEquipment = async (req, res) => {
         const filter = { name: computerInfo.name };
         const options = { upsert: true, new: true, setDefaultsOnInsert: true };
 
-        // Обновляем или создаем запись
+        // Обновляем или создаем запись оборудования
         let updatedEquipment = await Equipment.findOneAndUpdate(filter, equipmentData, options);
 
         // Оценка производительности
@@ -89,7 +93,7 @@ const addEquipment = async (req, res) => {
 
         // Генерация QR-кода
         const qrUrl = `http://webconnect.rubikom.kz/equipment/${computerInfo.name}`;
-        const qrCodeData = await QRCode.toDataURL(qrUrl); // Создаем QR-код в формате Base64
+        const qrCodeData = await QRCode.toDataURL(qrUrl);
 
         // Обновляем оборудование с оценкой и QR-кодом
         updatedEquipment = await Equipment.findOneAndUpdate(
@@ -99,12 +103,12 @@ const addEquipment = async (req, res) => {
         );
 
         res.status(200).json({
-            message: 'Data received and stored successfully',
+            message: 'Данные получены и успешно сохранены',
             data: updatedEquipment
         });
     } catch (error) {
-        console.error('Error handling /api/createEquipment request:', error);
-        res.status(500).json({ message: 'Internal server error', error: error.message });
+        console.error('Ошибка при обработке запроса /api/createEquipment:', error);
+        res.status(500).json({ message: 'Внутренняя ошибка сервера', error: error.message });
     }
 };
 
@@ -182,11 +186,21 @@ async function getInfoEquipment(req, res) {
 }
 
 const getEquipments = async (req, res) => {
+    const { division, activeStatus } = req.params;
+
     try {
-        const equipments = await Equipment.find();
-        res.status(200).json(equipments);
+        // Преобразуем activeStatus в булево значение
+        const isActiveStatus = activeStatus === 'true';
+
+        const equipment = await Equipment.find({
+            division: division,
+            online: isActiveStatus
+        });
+
+        res.status(200).json(equipment);
     } catch (error) {
-        res.status(500).json({ message: 'Error fetching equipments' });
+        console.error('Ошибка при получении данных оборудования:', error);
+        res.status(500).json({ message: 'Ошибка на сервере при получении данных оборудования' });
     }
 };
 
