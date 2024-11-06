@@ -174,12 +174,23 @@ const calculateEstimation = (equipment) => {
 async function getEquipment(req, res) {
     const { id } = req.params;
     try {
-        // Поскольку _id является ObjectId, необходимо его преобразовать
+        // Получаем оборудование по его ID
         const equipmentData = await Equipment.findById(id);
         if (!equipmentData) {
             return res.status(404).json({ message: 'Оборудование не найдено' });
         }
-        res.json(equipmentData);
+
+        // Находим подразделение, связанное с этим оборудованием
+        const divisionData = await Division.findById(equipmentData.division);
+        if (!divisionData) {
+            return res.status(404).json({ message: 'Подразделение не найдено' });
+        }
+
+        // Возвращаем данные оборудования вместе с данными подразделения
+        res.json({
+            equipment: equipmentData,
+            division: divisionData,
+        });
     } catch (error) {
         console.error('Ошибка при поиске оборудования:', error);
         res.status(500).json({ message: 'Ошибка сервера' });

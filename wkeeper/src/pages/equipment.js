@@ -88,7 +88,7 @@ export default function Equipment() {
     };
 
     
-
+    if (isLoading) return <LoadingComponent width="100%" height="20vh" />;
 
 
     const activeDivision = divisions.find((division) => division._id === activeDivisionId);
@@ -97,10 +97,6 @@ export default function Equipment() {
         <Head>
             <title>Оборудование | WebConnect</title>
         </Head>
-        {isLoading ? ( 
-            <LoadingComponent />
-        ) : ( 
-            <>
             <div className="w-full flex justify-start max-w-[1216px] mx-auto py-8 px-6 gap-12">
             <div className="w-[30%] ">
                 <div className="bg-[#242F3D] rounded-xl p-4">
@@ -236,8 +232,6 @@ export default function Equipment() {
             </div> 
  
         </div>
-        </>
-        )}
         </>
     )
 }
