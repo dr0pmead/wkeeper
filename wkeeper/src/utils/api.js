@@ -49,11 +49,20 @@ export const fetchAllDivisions = async () => {
 
 export const fetchEquipment = async (division, activeStatus) => {
     try {
-        console.log('Параметры:', { division, activeStatus });
-        const response = await api.get(`/equipment/${encodeURIComponent(division)}/${activeStatus}`);
+        const response = await api.get(`/equipment/${division}/${activeStatus}`);
         return response.data; // Возвращаем массив оборудования
     } catch (error) {
         console.error('Ошибка при получении данных оборудования:', error);
+        throw error; // Пробрасываем ошибку для обработки в компоненте
+    }
+};
+
+export const fetchSingleEqipment = async (id) => {
+    try {
+        const response = await api.get(`/equipment/${id}`);
+        return response.data;
+    } catch (error) {
+        console.error('Ошибка при получении данных из division:', error);
         throw error; // Пробрасываем ошибку для обработки в компоненте
     }
 };

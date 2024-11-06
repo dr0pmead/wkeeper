@@ -1,8 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useUser } from '@/components/UserContext';
-import { fetchAllDivisions } from '@/utils/api';
+import { fetchAllDivisions, fetchSingleEqipment } from '@/utils/api';
 import LoadingComponent from '@/components/Loading';
-import EquipmentTable from './Equipment/equipmentTable';
+import EquipmentTable from './equipment/equipmentTable';
+import { select } from '@nextui-org/react';
+import { useRouter } from 'next/router';
+import Head from 'next/head';
 
 export default function Equipment() {
     const user = useUser();
@@ -14,7 +17,10 @@ export default function Equipment() {
     const inputRef = useRef(null);
     const [isActiveGrid, setIsActiveGrid] = useState({ grid: true, list: false });
     const [animate, setAnimate] = useState(false);
-
+    const [itemsPerPage, setItemsPerPage] = useState(10);
+    const [selectedEquipment, setSelectedEquipment] = useState('');
+    const router = useRouter();
+    
     useEffect(() => {
         setIsLoading(true);
         const fetchData = async () => {
@@ -25,7 +31,6 @@ export default function Equipment() {
                     setActiveDivisionId(data[0]._id); // Устанавливаем первый элемент как активный
                 }
                 setIsLoading(false);
-                console.log(divisions)
             } catch (error) {
                 console.error('Ошибка при загрузке данных о подразделениях:', error);
             }
@@ -59,20 +64,43 @@ export default function Equipment() {
     };
 
     const handleGridButton = (layout) => {
-        setIsActiveGrid({
-            grid: layout === 'grid',
-            list: layout === 'list',
-        });
+        setAnimate(true);
+        setTimeout(() => {
+            setIsActiveGrid({
+                grid: layout === 'grid',
+                list: layout === 'list',
+            });
+            setAnimate(false);
+        }, 300);
     };
 
+    useEffect(() => {
+        if (router.query.id) {
+            setSelectedEquipment(router.query.id);
+        }
+    }, [router.query.id]);
+
+    const handleEquipmentSelect = (equipmentId) => {
+        setSelectedEquipment(equipmentId);
+
+        // Меняем URL без перезагрузки страницы
+        router.push(`/equipment/${equipmentId}/view`, undefined, { shallow: true });
+    };
+
+    
+
+
+
     const activeDivision = divisions.find((division) => division._id === activeDivisionId);
-
-
     return (
         <>
+        <Head>
+            <title>Оборудование | WebConnect</title>
+        </Head>
         {isLoading ? ( 
             <LoadingComponent />
         ) : ( 
+            <>
             <div className="w-full flex justify-start max-w-[1216px] mx-auto py-8 px-6 gap-12">
             <div className="w-[30%] ">
                 <div className="bg-[#242F3D] rounded-xl p-4">
@@ -159,9 +187,10 @@ export default function Equipment() {
                     </div>
 
                 </div>
-                <div className="w-full py-4 border-b border-b-white/10 font-bold text-white text-xl flex items-center gap-1">
+                <div className="w-full py-4 border-b border-b-white/10 font-bold text-white text-xl flex items-center gap-1 justify-between">
                 {activeDivision && (
                     <>
+                    <div className="flex items-center gap-1">
                         <span
                             className={`transition-opacity duration-300 transform ${
                                 animate ? 'opacity-0' : 'opacity-100'
@@ -176,19 +205,38 @@ export default function Equipment() {
                         >
                             {activeDivision.count}
                         </span>
+                    </div>
+                        <div className="flex items-center gap-2">
+                            <span className="text-[#7F91A4] text-sm font-light">Элементов на странице:</span>
+                            <select
+                                value={itemsPerPage}
+                                onChange={(e) => setItemsPerPage(Number(e.target.value))}
+                                className=" text-white bg-[#242F3D] border border-[#242F3D] duration-300 focus:ring-2 focus:ring-[#7177F8] hover:border-[#7177F8] rounded-lg text-sm font-medium px-2 py-1"
+                            >
+                                {[10, 20, 30, 40, 50].map((number) => (
+                                    <option key={number} value={number}>
+                                        {number}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
                         </>
                 )}
                 </div>
-
-                <div>
-                <EquipmentTable
-                    activeDivisionId={activeDivisionId}
-                    activeStatus={activeStatus}
-                    isActiveGrid={isActiveGrid}
-                />
-                </div>
-            </div>  
+                <div className={`transition-opacity duration-300 transform ${animate ? 'opacity-0' : 'opacity-100'}`}>
+                        <EquipmentTable
+                            key={activeDivisionId}
+                            activeDivisionId={activeDivisionId}
+                            activeStatus={activeStatus}
+                            isActiveGrid={isActiveGrid}
+                            itemsPerPage={itemsPerPage}
+                            onEquipmentSelect={handleEquipmentSelect}
+                        />
+                    </div>
+            </div> 
+ 
         </div>
+        </>
         )}
         </>
     )

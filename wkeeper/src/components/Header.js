@@ -14,6 +14,10 @@ export default function Header() {
     };
 
     const isActiveLink = (href) => {
+        if (href === '/equipment') {
+            // Проверяем, если путь начинается с "/equipment"
+            return router.pathname.startsWith('/equipment') ? 'text-white' : 'text-[#7F91A4]';
+        }
         return router.pathname === href ? 'text-white' : 'text-[#7F91A4]';
     };
 
