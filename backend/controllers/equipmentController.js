@@ -171,10 +171,11 @@ const calculateEstimation = (equipment) => {
     return parseFloat(averageScore.toFixed(1)); // Возвращаем с округлением до десятых
 };
 
-async function getInfoEquipment(req, res) {
-    const { name } = req.params;
+async function getEquipment(req, res) {
+    const { id } = req.params;
     try {
-        const equipmentData = await Equipment.findOne({ name });
+        // Поскольку _id является ObjectId, необходимо его преобразовать
+        const equipmentData = await Equipment.findById(id);
         if (!equipmentData) {
             return res.status(404).json({ message: 'Оборудование не найдено' });
         }
@@ -246,5 +247,5 @@ module.exports = {
     addEquipment,
     getEquipments,
     editEquipment,
-    getInfoEquipment
+    getEquipment
 };
