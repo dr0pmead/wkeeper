@@ -9,7 +9,7 @@ const LoadingComponent = ({ width = '100%', height = '100vh' }) => {
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.3 }}
-        className="loading-container bg-[#17212B] flex items-center justify-center backdrop-blur-lg"
+        className="loading-container flex items-center justify-center backdrop-blur-lg"
         style={{ width, height }} // Применяем width и height из пропсов
       >
         <Spinner size="lg" />

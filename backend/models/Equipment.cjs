@@ -48,7 +48,13 @@ const EquipmentSchema = new mongoose.Schema({
     inventoryNumber: { type: String, default: 'Неизвестен' },
     estimation: { type: Number },
     qrcode: { type: String },
-    type: { type: String }
+    type: { type: String },
+    dateBuild: {type: Date},
+    collector: {type: String},
+    document: {
+        certificate: { type: String },
+        invoice: { type: String }
+    }
 });
 
 module.exports = mongoose.model('Equipment', EquipmentSchema);

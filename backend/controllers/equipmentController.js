@@ -217,31 +217,33 @@ const getEquipments = async (req, res) => {
 };
 
 const editEquipment = async (req, res) => {
-    const { _id, inventoryNumber, written } = req.body;
+    const { id, owner, inventoryNumber } = req.body; // Извлекаем поля напрямую из тела запроса
 
     try {
-        console.log(`Полученные данные: _id=${_id}, inventoryNumber=${inventoryNumber}, written=${written}`);
+        console.log(`Полученные данные: id=${id}, owner=${owner}, inventoryNumber=${inventoryNumber}`);
 
-        // Находим запись по _id
-        const equipment = await Equipment.findById(_id);
+        // Находим запись по id
+        const equipment = await Equipment.findById(id);
 
         if (!equipment) {
             console.log('Оборудование не найдено');
             return res.status(404).json({ message: 'Оборудование не найдено' });
         }
 
-        // Проверим старое значение перед обновлением
-        console.log(`Старое значение written: ${equipment.written}`);
+        // Логирование старых значений перед обновлением
+        console.log(`Старое значение owner: ${equipment.owner}`);
+        console.log(`Старое значение inventoryNumber: ${equipment.inventoryNumber}`);
 
         // Обновляем поля
-        equipment.inventoryNumber = inventoryNumber;
-        equipment.written = written;
+        equipment.owner = owner || equipment.owner;
+        equipment.inventoryNumber = inventoryNumber || equipment.inventoryNumber;
 
         // Сохраняем изменения
         const updatedEquipment = await equipment.save();
 
-        // Логируем обновленное значение
-        console.log(`Новое значение written: ${updatedEquipment.written}`);
+        // Логирование новых значений после сохранения
+        console.log(`Новое значение owner: ${updatedEquipment.owner}`);
+        console.log(`Новое значение inventoryNumber: ${updatedEquipment.inventoryNumber}`);
 
         res.status(200).json({
             message: 'Оборудование успешно обновлено',
@@ -252,7 +254,6 @@ const editEquipment = async (req, res) => {
         res.status(500).json({ message: 'Ошибка сервера', error: error.message });
     }
 };
-
 
 module.exports = {
     addEquipment,

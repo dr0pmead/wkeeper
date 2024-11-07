@@ -7,25 +7,20 @@ import { MdStorage } from "react-icons/md";
 import { GrConnect } from "react-icons/gr";
 import { CgComponents } from "react-icons/cg";
 import { IoIosBuild } from "react-icons/io";
+import EquipmentSummary from './EquipmentSummary';
+import EquipmentStorage from './EquipmentStorage';
+import EquipmentConnection from './EquipmentConnection';
 import { FaArrowLeft } from "react-icons/fa6";
-import Image from 'next/image';
 
-export default function EquipmentView({ equipmentId, onClose, activeDivisionId }) {
-    const [isLoading, setIsLoading] = useState(null);
-    const [equipment, setEquipment] = useState(equipmentId || null); // используем equipmentId, если он передан
+
+export default function EquipmentView({ onClose, activeDivisionId }) {
+    const [isLoading, setIsLoading] = useState(true);
+    const [owner, setOwner] = useState('');
+    const [inventoryNumber, setInventoryNumber] = useState('');
+    const [equipment, setEquipment] = useState(null);
     const [equipmentData, setEquipmentData] = useState(null);
     const [animate, setAnimate] = useState(false);
 
-    // Проверяем URL при загрузке компонента и устанавливаем equipment ID, если он есть
-    useEffect(() => {
-        if (!equipment) { // Если equipmentId не установлен, проверяем URL
-            const path = window.location.pathname;
-            const match = path.match(/\/equipment\/([^/]+)\/view/);
-            if (match && match[1]) {
-                setEquipment(match[1]); // Устанавливаем equipment ID из URL
-            }
-        }
-    }, []);
 
     const tabs = [
         { id: 'summary', name: 'Краткая информация', icon: <FaInfoCircle /> },
@@ -37,6 +32,38 @@ export default function EquipmentView({ equipmentId, onClose, activeDivisionId }
 
     const [activeTab, setActiveTab] = useState(tabs[0]);
 
+    useEffect(() => {
+        // Получаем ID оборудования из URL при первой загрузке
+        const path = window.location.pathname;
+        const match = path.match(/\/equipment\/([^/]+)\/view/);
+        if (match && match[1]) {
+            setEquipment(match[1]);
+        }
+    }, []);
+
+    useEffect(() => {
+        if (equipment) {
+            setIsLoading(true);
+
+            loadData();
+        }
+    }, [equipment]);
+
+    const loadData = async () => {
+        try {
+            const data = await fetchSingleEqipment(equipment);
+            if (data) {
+                setEquipmentData(data);
+                setOwner(data.equipment?.owner || 'Неизвестно');
+                setInventoryNumber(data.equipment?.inventoryNumber || 'Неизвестен');
+            }
+            setIsLoading(false);
+        } catch (error) {
+            console.error('Ошибка при загрузке данных оборудования:', error);
+            setIsLoading(false);
+        }
+    };
+
     const handleTabChange = (tab) => {
         setAnimate(true);
         setTimeout(() => {
@@ -45,26 +72,9 @@ export default function EquipmentView({ equipmentId, onClose, activeDivisionId }
         }, 300);
     };
 
-    useEffect(() => {
-        setIsLoading(true)
-        if (equipment) { // Только если equipment установлен
-            const loadData = async () => {
-                try {
-                    const data = await fetchSingleEqipment(equipment); // Загружаем данные по ID
-                    setEquipmentData(data);
-                    
-                    setIsLoading(false);
-                } catch (error) {
-                    console.error('Ошибка при загрузке данных оборудования:', error);
-                }
-            };
+    if (isLoading || !equipmentData) return <LoadingComponent width="100%" height="20vh" />;
 
-            loadData();
-        }
-    }, [equipment]);
 
-    if (!equipmentData) return <LoadingComponent width="100%" height="20vh" />;
-    if (isLoading) return <LoadingComponent width="100%" height="20vh" />;
 
     return (
         <>
@@ -95,6 +105,7 @@ export default function EquipmentView({ equipmentId, onClose, activeDivisionId }
                 ))}
             </div>
             </div>
+
             <div className="w-full flex flex-col gap-6">
                 <div className="pb-4 justify-between flex items-start border-b border-b-white/10 flex-col gap-6">
                     <div className="w-full justify-between flex">
@@ -112,53 +123,57 @@ export default function EquipmentView({ equipmentId, onClose, activeDivisionId }
                         <span className="text-xl text-white font-bold">{activeTab?.name} </span>
                     </span>
                 </div>
-                
-                <div className="grid grid-cols-3 bg-[#242F3D] rounded-xl p-4 gap-3">
-                
-                    <div className="flex flex-col gap-3">
-                        <span className="font-bold text-md text-white pb-2 border-b border-b-white/10"> О Компьютере</span>
-                        <div className="flex flex-col gap-1">
-                            <span className="text-white text-sm">Имя компьютера: <span className="text-sm text-[#7F91A4]">{equipmentData.equipment.name}</span></span>
-                            <span className="text-white text-sm">Операционная система: <span className="text-sm text-[#7F91A4]">{equipmentData.equipment.osVersion}</span></span>
-                            <span className="text-white text-sm">Подразделение: <span className="text-sm text-[#7F91A4]">{equipmentData.division.rusName}</span></span>
-                            <span className="text-white text-sm">Отдел: <span className="text-sm text-[#7F91A4]">{equipmentData.equipment.department}</span></span>
-                            <span className="text-white text-sm">Принтер: <span className="text-sm text-[#7F91A4]">{equipmentData.equipment.printer.Name}</span></span>
-                            <span className="text-white text-sm">Оценка проивзодительности: <span className="text-sm text-[#7F91A4]">{equipmentData.equipment.estimation}</span></span>
-                            <span className="text-white text-sm flex flex-col gap-2 mt-2">Владелец:
-                            <input className="disabled:pointer-events-none disabled:bg-[#768A9E]/20 hover:border-[#7177F8] focus:ring-2 focus:ring-[#7177F8] text-sm px-2 py-2 text-md bg-transparent border border-[#768A9E]/20 w-full rounded-lg text-[#7F91A4] duration-200 outline-none ring-0" value={equipmentData.equipment.owner}/></span>
-                            <span className="text-white text-sm flex flex-col gap-2">Инвентарный номер: 
-                            <input className="disabled:pointer-events-none disabled:bg-[#768A9E]/20 hover:border-[#7177F8] focus:ring-2 focus:ring-[#7177F8] text-sm px-2 py-2 text-md bg-transparent border border-[#768A9E]/20 w-full rounded-lg text-[#7F91A4] duration-200 outline-none ring-0" value={equipmentData.equipment.inventoryNumber ? equipmentData.equipment.inventoryNumber : 'Неизвестен'}/></span>
-                        </div>
-                    
-                    </div>
-                    
-                    <div className="flex flex-col gap-3">
-                        <span className="font-bold text-md text-white pb-2 border-b border-b-white/10"> IP Адреса</span>
-                        
-                        <div className="flex flex-col gap-1">
-                            <span className="text-white text-sm">Основной: <span className="text-sm text-[#7F91A4]">{equipmentData.equipment.ipAddress.main}</span></span>
-                                
-                            {equipmentData.equipment.ipAddress.secondary.length > 0 && (
-                                <>
-                                    {equipmentData.equipment.ipAddress.secondary.map((ip, index) => (
-                                        <span key={index} className="text-white text-sm pb-2">Доп. адрес: <span className="text-sm text-[#7F91A4]">{ip}</span></span>
-                                    ))}
-                                </>
+
+                {tabs.map((tab) => (
+                    activeTab?.id === tab.id && (
+                        <div
+                            key={tab.id}
+                            className={`transition-opacity duration-300 transform ${
+                                animate ? 'opacity-0' : 'opacity-100'
+                            }`}
+                        >
+                            {tab.id === 'summary' && (
+                                <EquipmentSummary
+                                    equipmentData={equipmentData}
+                                    owner={owner}
+                                    inventoryNumber={inventoryNumber}
+                                    setInventoryNumber={setInventoryNumber}
+                                    setOwner={setOwner}
+                                    loadData={loadData}
+                                />
                             )}
-                                
+                            {tab.id === 'storage' && (
+                                <EquipmentStorage
+                                    equipmentData={equipmentData}
+                                    // дополнительные пропсы, если нужно
+                                />
+                            )}
+                            {tab.id === 'connection' && (
+                                <EquipmentConnection
+                                    equipmentData={equipmentData}
+                                    // дополнительные пропсы, если нужно
+                                />
+                            )}
+                            {/* {tab.id === 'components' && (
+                                <EquipmentComponents
+                                    equipmentData={equipmentData}
+                                    // дополнительные пропсы, если нужно
+                                />
+                            )}
+                            {tab.id === 'buildData' && (
+                                <EquipmentBuildData
+                                    equipmentData={equipmentData}
+                                    // дополнительные пропсы, если нужно
+                                />
+                            )} */}
                         </div>
-                    
-                    </div>
-                    
-                    <div className="flex flex-col gap-3">
-                        <span className="font-bold text-md text-white pb-2 border-b border-b-white/10"> QR код</span>
-                        <div className="flex items-center rounded-xl overflow-hidden w-full">
-                            <Image src={equipmentData.equipment.qrcode} width={200} height={200} alt={equipmentData.equipment.name} className="w-full pointer-events-none"/>
-                        </div>
-                        <button className="text-sm font-bold text-white rounded-xl px-4 py-2 bg-[#7177F8] hover:bg-[#525AFF] duration-300 ">Скачать</button>
-                    </div>
-                </div>
+                    )
+                ))}
+
             </div>
+
+
+
         </div>
         </>
     );

@@ -1,5 +1,5 @@
 const express = require('express')
-const { addEquipment, getEquipments, getEquipment } = require('../controllers/equipmentController.js');
+const { addEquipment, getEquipments, getEquipment, editEquipment } = require('../controllers/equipmentController.js');
 
 const router = express.Router();
 
@@ -7,5 +7,6 @@ const router = express.Router();
 router.post('/createEquipment', addEquipment);
 router.get('/:division/:activeStatus', getEquipments);
 router.get('/:id', getEquipment)
+router.put('/:id/edit', editEquipment)
 
 module.exports = router;

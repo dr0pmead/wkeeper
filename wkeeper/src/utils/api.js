@@ -66,3 +66,13 @@ export const fetchSingleEqipment = async (id) => {
         throw error; // Пробрасываем ошибку для обработки в компоненте
     }
 };
+
+export const saveEditedEquipment = async (data) => {
+    try {
+        const response = await api.put(`/equipment/${data.id}/edit`, data); // Динамическое использование id из data
+        return response.data;
+    } catch (error) {
+        console.error('Ошибка обновления данных:', error);
+        throw error; // Пробрасываем ошибку для обработки в компоненте
+    }
+};
