@@ -70,8 +70,6 @@ export default function EquipmentSummary({ equipmentData, owner, inventoryNumber
 
     return ( 
         <>
-        
-        
                 <div className="grid grid-cols-3 bg-[#242F3D] rounded-xl p-4 gap-3"> 
                 <div className="flex flex-col gap-3">
                     <span className="font-bold text-md text-white pb-2 border-b border-b-white/10"> О Компьютере</span>
